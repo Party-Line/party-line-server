@@ -1,0 +1,23 @@
+{
+    "debug": true,
+    "paths": {
+        "siteurl": "https://localhost"
+    },
+    "db": {
+        "host": "localhost",
+        "user": "",
+        "password": "",
+        "database": "partyline"
+    },
+    "jwt": {
+        "secret": "",
+        "expiresIn": "1209600‬",
+        "recheckIn": "600"
+    },
+    "api": {
+        "sendgrid": ""
+    },
+    "email": {
+        "from": ""
+    }
+}

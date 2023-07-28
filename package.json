@@ -1,0 +1,16 @@
+{
+    "name": "partyline-server",
+    "license": "ISC",
+    "version": "0.1.0",
+    "description": "A WebSocket chat server for Party Line",
+    "repository": "https://github.com/Party-Line/partyline-server",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "@sendgrid/mail": "^7.7.0",
+        "jsonwebtoken": "^9.0.1",
+        "mysql": "^2.17.1",
+        "ws": "^8.13.0"
+    }
+}
