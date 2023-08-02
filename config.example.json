@@ -1,23 +1,23 @@
 {
     "debug": true,
     "paths": {
-        "siteurl": "https://localhost"
+        "siteurl": "http://localhost"
     },
     "db": {
-        "host": "localhost",
-        "user": "",
-        "password": "",
+        "host": "127.0.0.1",
+        "user": "user",
+        "password": "password",
         "database": "partyline"
     },
     "jwt": {
-        "secret": "",
+        "secret": "secret",
         "expiresIn": "1209600‬",
         "recheckIn": "600"
     },
     "api": {
-        "sendgrid": ""
+        "sendgrid": "SG.Key"
     },
     "email": {
-        "from": ""
+        "from": "noreply@localhost"
     }
 }
