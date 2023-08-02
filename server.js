@@ -1,5 +1,9 @@
+// openssl req -x509 -newkey rsa:4096 -keyout secret.pem -out public.pem -days 2000 -nodes
+// 127.0.0.1 discuitchat.local
+
 const fs = require('fs')
 const path = require('path')
+const http = require('http')
 const https = require('https')
 const mysql = require('mysql')
 const websocket = require('ws')
@@ -25,10 +29,10 @@ global.db = null
 
 let config
 
-let tlsPort
-let tlsServer
-let tlsConfig
-let wssServer
+let webPort = 8080
+let webServer = null
+let wssConfig = null
+let wssServer = null
 
 try {
     config = JSON.parse(
@@ -65,14 +69,17 @@ global.db.on('error', function(error) {
 global.db.connect()
 
 try {
-    tlsPort = 8080
-    tlsServer = https.createServer({
-        cert: fs.readFileSync(path.resolve(__dirname, 'public.pem')),
-         key: fs.readFileSync(path.resolve(__dirname, 'secret.pem'))
-    })
-
-    tlsConfig = { server: tlsServer }
-    wssServer = new websocket.Server(tlsConfig)
+    if (config.paths.siteurl.substring(0, 7) === 'http://') {
+        webServer = http.createServer()
+    } else {
+        webServer = https.createServer({
+            cert: fs.readFileSync(path.resolve(__dirname, 'public.pem')),
+             key: fs.readFileSync(path.resolve(__dirname, 'secret.pem'))
+        })
+    }
+    
+    wssConfig = { server: webServer }
+    wssServer = new websocket.Server(wssConfig)
 } catch (error) {
     util.log('err', 'Unable to start the web socket server', error)
     process.exit(1)
@@ -83,7 +90,7 @@ wssServer.on('error', function(error) {
 })
 
 wssServer.on('listening', function(ws, request) {
-    util.log('sys', 'Listening on *:' + tlsPort)
+    util.log('sys', 'Listening on *:' + webPort)
 })
 
 wssServer.on('connection', function(ws, request) {
@@ -179,8 +186,8 @@ wssServer.on('connection', function(ws, request) {
     })
 })
 
-tlsServer.on('close', function() {
+webServer.on('close', function() {
     global.db.end()
 })
 
-tlsServer.listen(tlsPort)
+webServer.listen(webPort)
