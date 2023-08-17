@@ -136,22 +136,22 @@ wssServer.on('connection', function(ws, request) {
                                 const content = msg.content
                                 
                                 switch (msg.type) {
-                                    case 'account-create'     :
+                                    case 'account-create' :
                                         account.create(content, msg.id, ws)
                                         break
-                                    case 'account-login'      :
+                                    case 'account-login' :
                                         account.login(content, msg.id, ws, clientId)
                                         break
                                     case 'account-login-link' :
                                         account.loginLink(content, msg.id, ws)
                                         break
-                                    case 'account-connect'    :
+                                    case 'account-connect' :
                                         account.connect(user)
                                         break
-                                    case 'channel-message'    :
+                                    case 'channel-message' :
                                         channel.message(content, user)
                                         break
-                                    case 'channel-create'    :
+                                    case 'channel-create' :
                                         channel.create(content, user, msg.id, ws)
                                         break
                                 }
@@ -179,9 +179,12 @@ wssServer.on('connection', function(ws, request) {
                     const content = msg.content
                     
                     switch (msg.type) {
-                        case 'account-login'      :
+                        case 'account-login' :
                             account.login(content, msg.id, ws, clientId)
                             break
+                        default :
+                            const errorCode = util.logError('JWT Missing', msg.type)
+                            ws.send(message.create(errorCode, msg.type))
                     }
                 } catch (e) {
                     util.log('err', 'Unable to run command', e)
