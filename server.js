@@ -1,5 +1,4 @@
 // openssl req -x509 -newkey rsa:4096 -keyout secret.pem -out public.pem -days 2000 -nodes
-// 127.0.0.1 discuitchat.local
 
 const fs = require('fs')
 const path = require('path')
@@ -96,37 +95,33 @@ wssServer.on('listening', function(ws, request) {
 wssServer.on('connection', function(ws, request) {
     const clientId = request.headers['sec-websocket-key']
     
-    if (global.users.hasOwnProperty(clientId) === false) {
-        account.createGuest(clientId, ws)
-    }
-    
     ws.on('close', function() {
-        const clientName = users[clientId].name
-        
-        util.log('sys', clientName + ' has disconnected')
-        send.all(message.highlight(clientName, 'name', 'r') + ' has disconnected', 'channel-message', ws)
-        
-        channel.users(ws)
+        if (users[clientId]) {
+            const clientName = users[clientId].name
+            
+            util.log('sys', clientName + ' has disconnected')
+            send.all(message.highlight(clientName, 'name', 'r') + ' has disconnected', 'channel-message', ws)
+            
+            channel.users(ws)
+        }
     })
     
     ws.on('message', function(msg) {
         try {
             msg = JSON.parse(msg)
             
-            jwt.verify(msg.jwt, global.jwt.secret, function(error, token) {
-                let user = global.users[clientId]
-                
-                if (error && user.isGuest === false) {
-                    let errorCode = ''
-                    
-                    if (error.name !== 'TokenExpiredError') {
-                        errorCode = util.logError('JWT Error: ' + error, msg.jwt)
-                    }
-                    
-                    ws.send(message.create(errorCode, 'account-logout'))
-                } else {
-                    let runCommand = function() {
-                        if (error === null) {
+            if (msg.jwt) {
+                jwt.verify(msg.jwt, global.jwt.secret, function(error, token) {
+                    if (error) {
+                        let errorCode = ''
+                        
+                        if (error.name !== 'TokenExpiredError') {
+                            errorCode = util.logError('JWT Error: ' + error, msg.jwt)
+                        }
+                        
+                        ws.send(message.create(errorCode, 'account-logout'))
+                    } else {
+                        let runCommand = function() {
                             global.users[clientId] = {
                                 client: ws,
                                 clientId: clientId,
@@ -135,51 +130,63 @@ wssServer.on('connection', function(ws, request) {
                                 isGuest: false
                             }
                             
-                            user = global.users[clientId]
+                            let user = global.users[clientId]
+                            
+                            try {
+                                const content = msg.content
+                                
+                                switch (msg.type) {
+                                    case 'account-create'     :
+                                        account.create(content, msg.id, ws)
+                                        break
+                                    case 'account-login'      :
+                                        account.login(content, msg.id, ws, clientId)
+                                        break
+                                    case 'account-login-link' :
+                                        account.loginLink(content, msg.id, ws)
+                                        break
+                                    case 'account-connect'    :
+                                        account.connect(user)
+                                        break
+                                    case 'channel-message'    :
+                                        channel.message(content, user)
+                                        break
+                                    case 'channel-create'    :
+                                        channel.create(content, user, msg.id, ws)
+                                        break
+                                }
+                            } catch (e) {
+                                util.log('err', 'Unable to run command', e)
+                            }
                         }
                         
                         try {
-                            const content = msg.content
+                            const nowTimestamp = Math.floor(Date.now() / 1000)
                             
-                            switch (msg.type) {
-                                case 'account-create'     :
-                                    account.create(content, msg.id, ws)
-                                    break
-                                case 'account-login'      :
-                                    account.login(content, msg.id, ws, clientId)
-                                    break
-                                case 'account-login-link' :
-                                    account.loginLink(content, msg.id, ws)
-                                    break
-                                case 'account-connect'    :
-                                    account.connect(user)
-                                    break
-                                case 'channel-message'    :
-                                    channel.message(content, user)
-                                    break
-                                case 'channel-create'    :
-                                    channel.create(content, user, msg.id, ws)
-                                    break
+                            if (token.chk < nowTimestamp) {
+                                account.token(token, ws, runCommand)
+                            } else {
+                                runCommand()
                             }
                         } catch (e) {
-                            util.log('err', 'Unable to run command', e)
+                            const errorCode = util.logError(e)
+                            ws.send(message.create(errorCode, 'account-logout'))
                         }
                     }
+                })
+            } else {
+                try {
+                    const content = msg.content
                     
-                    try {
-                        const nowTimestamp = Math.floor(Date.now() / 1000)
-                        
-                        if (user.isGuest === false && token.chk < nowTimestamp) {
-                            account.token(token, ws, runCommand)
-                        } else {
-                            runCommand()
-                        }
-                    } catch (e) {
-                        const errorCode = util.logError(e)
-                        ws.send(message.create(errorCode, 'account-logout'))
+                    switch (msg.type) {
+                        case 'account-login'      :
+                            account.login(content, msg.id, ws, clientId)
+                            break
                     }
+                } catch (e) {
+                    util.log('err', 'Unable to run command', e)
                 }
-            })
+            }
         } catch (e) {
             util.log('err', 'Unable to parse message', e)
         }
