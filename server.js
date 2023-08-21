@@ -176,11 +176,13 @@ wssServer.on('connection', function(ws, request) {
                 })
             } else {
                 try {
-                    const content = msg.content
-                    
                     switch (msg.type) {
                         case 'account-login' :
+                            const content = msg.content
                             account.login(content, msg.id, ws, clientId)
+                            break
+                        case 'keepalive' :
+                            ws.send(message.create('', msg.type))
                             break
                         default :
                             const errorCode = util.logError('JWT Missing', msg.type)
