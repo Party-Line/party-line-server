@@ -69,3 +69,7 @@ ALTER TABLE `user`
 
 ALTER TABLE `user`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+-- UPDATES
+
+ALTER TABLE `user` ADD `timezone` SMALLINT(4) NOT NULL DEFAULT '0' AFTER `login_remember`;

@@ -14,6 +14,8 @@ const message = require('./lib/partyline/message.js')
 const channel = require('./lib/partyline/channel.js')
 const account = require('./lib/partyline/account.js')
 
+process.env.TZ = 'UTC'
+
 global.sendgrid = require('@sendgrid/mail')
 
 global.debug = false
@@ -127,6 +129,7 @@ wssServer.on('connection', function(ws, request) {
                                 clientId: clientId,
                                 dbId: token.uid,
                                 name: token.username,
+                                timezone: token.timezone,
                                 isGuest: false
                             }
                             
