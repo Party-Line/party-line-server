@@ -102,7 +102,11 @@ wssServer.on('connection', function(ws, request) {
             const clientName = users[clientId].name
             
             util.log('sys', clientName + ' has disconnected')
-            send.all(message.highlight(clientName, 'name', 'r') + ' has disconnected', 'channel-message', ws)
+            
+            let disconnected = message.highlight(clientName, 'name', 'r') + ' has disconnected'
+            disconnected = '<div class="pl-chat-message-content col">' + disconnected + '</div>'
+            
+            send.all(disconnected, 'channel-message', ws)
             
             channel.users(ws)
         }
